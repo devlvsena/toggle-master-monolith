@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 # O que este script faz:
 # 1. Checa as variáveis de ambiente para o banco de dados.
@@ -16,18 +17,20 @@ fi
 echo "Aguardando o banco de dados em ${DB_HOST}:${DB_PORT}..."
 
 # Loop para aguardar o banco de dados ficar disponível
-# Para PostgreSQL, podemos usar o `pg_isready`
-# Adicione `postgresql-client` ao seu Dockerfile (ex: apt-get install -y postgresql-client)
-while ! pg_isready -h "$DB_HOST" -p "$DB_PORT" -q -U "$DB_USER"; do
+# Para PostgreSQL, usamos o `pg_isready` (instale postgresql-client na imagem)
+# Usamos `until` em vez de `while ! ...` para maior portabilidade entre /bin/sh implementations
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -q -U "${DB_USER:-}" >/dev/null 2>&1; do
   echo "Banco de dados indisponível - aguardando..."
   sleep 1
 done
 
 echo "Banco de dados disponível!"
 
-# Executa o comando de inicialização/migração do banco de dados
-echo "Executando a inicialização do banco de dados..."
-flask init-db
+# Executa o comando de inicialização/migração do banco de dados (se existir)
+if command -v flask >/dev/null 2>&1; then
+  echo "Executando a inicialização do banco de dados..."
+  flask init-db || true
+fi
 
 # Inicia a aplicação principal (Gunicorn)
 echo "Iniciando o servidor Gunicorn..."
