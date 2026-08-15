@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: togglemaster-configmap
+  namespace: togglemaster
+data:
+  DB_HOST: host.docker.internal
+  DB_NAME: togglemaster
+  DB_PORT: "5432"
