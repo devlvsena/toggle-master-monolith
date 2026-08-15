@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: togglemaster-deployment
+  namespace: togglemaster
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: togglemaster
+  template:
+    metadata:
+      labels:
+        app: togglemaster
+    spec:
+      imagePullSecrets:
+        - name: ecr-regcred
+      containers:
+        - name: togglemaster
+          image: 180981210379.dkr.ecr.us-east-1.amazonaws.com/toggle-master-monolith:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+          - configMapRef:
+              name: togglemaster-configmap
+          - secretRef:
+              name: togglemaster-secret
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
